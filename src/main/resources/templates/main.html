@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <link href="/main.css" rel="stylesheet" type="text/css">
+    <title>Форум</title>
+</head>
+<body>
+<div class="main_block">
+    <div class="site_name_block">
+        <label>Форум</label>
+    </div>
+    <div class="data_block">
+        <div class="info_block">
+            <label>Добро пожаловать на мой форум!<br>Можете перейти к <a href="/section/b">общей</a> секции с обсуждениями, или выбрать какую-либо секцию из приведенных ниже</label>
+        </div>
+        <div class="sections_block">
+            <ul>
+                <li th:each="section : ${mainSectionList}">
+                    <a th:href="@{'/section/' + ${section.article}}" class="button">
+                        <span th:text="${section.name}"></span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

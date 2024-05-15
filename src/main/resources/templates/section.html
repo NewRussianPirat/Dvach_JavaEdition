@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link href="/section.css" rel="stylesheet" type="text/css">
+    <title th:text="'/' + ${currentSection.getArticle()} + '/ - ' + ${currentSection.getName()}">Заголовок</title>
+</head>
+<body>
+<div class="header">
+    <a id="main-page-href" href="/">На главную</a>
+    <form id="auth" th:unless="${session.isAdmin}" action="/login" method="post">
+        <input type="hidden" name="username" value="user">
+        <label for="auth-password">Админ?</label>
+        <input type="password" id="auth-password" name="password">
+        <input type="submit" value="Войти">
+    </form>
+    <h1 th:text="${currentSection.getName()}">Заголовок</h1>
+    <button id="createTopicButton">Создать тему</button>
+    <form id="createTopicForm" class="inputForm" enctype="multipart/form-data" style="display: none;">
+        <label for="topicName"></label><input type="text" id="topicName" name="topicName"
+                                              placeholder="Название темы"><br>
+        <label for="postContent"></label><textarea id="postContent" name="postContent"
+                                                   placeholder="Содержимое поста"></textarea><br>
+        <div class="file-upload">
+            <button type="button" id="upload-button">Добавить файл</button>
+            <input type="file" id="file-input" name="file-input" multiple style="display: none;">
+            <div id="preview"></div>
+        </div>
+        <input type="submit" id="submitButton" value="Создать тему">
+        <input type="hidden" id="article" th:value="${currentSection.getArticle()}">
+    </form>
+</div>
+<div class="content">
+    <div class="sidebar">
+        <ul>
+            <li th:each="section : ${sectionList}">
+                <a th:href="@{'/section/' + ${section.getArticle()}}" class="sections_button">
+                    <span th:text="'/' + ${section.getArticle()} + '/ - ' + ${section.getName()}"></span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="main">
+        <div th:each="topic : ${topicList}" class="topic" th:data-topic-id="${topic.getId()}"
+             th:data-topic-title="${topic.getName()}">
+            <div th:each="post, stat: ${postMap.get(topic)}"
+                 th:classappend="${stat.index == 0 ? 'first-post' : ''}"
+                 class="post">
+                <div class="post-header">
+                    <span id="topic-Title" th:if="${stat.index == 0}" th:text="${topic.getName()}">Название темы</span>
+                    <span id="post-datetime" th:text="${post.getDatetime()}">Дата и время отправки</span>
+                    <span id="topic-reference" th:if="${stat.index == 0}">
+                        <a th:href="@{'/section/' + ${currentSection.getArticle()} + '/topic/' + ${topic.getId()}}"
+                           target="_blank"> Ответить</a>
+                    </span>
+                    <div id="deleteBlock" th:if="${session.isAdmin}">
+                        <form th:action="@{${stat.index == 0 ? '/section/' + currentSection.getArticle() + '/deleteTopic' : '/section/' + currentSection.getArticle() + '/deletePost'}}"
+                              method="post" id="deleteForm">
+                            <input type="hidden" th:name="${stat.index == 0 ? 'topic' : 'post'}"
+                                   th:value="${stat.index == 0 ? topic.getId() : post.getId()}" id="deleteInput"/>
+                            <button type="submit"
+                                    th:text="${stat.index == 0 ? 'Удалить обсуждение' : 'Удалить пост'}"
+                                    id="deleteButton"></button>
+                        </form>
+                    </div>
+                    <input type="hidden" id="isAdmin" th:value="${session.isAdmin}"/>
+                </div>
+                <div class="post-block"
+                     th:classappend="${(imageMap.get(post) != null ? imageMap.get(post).size() : 0) +
+                      (videoMap.get(post) != null ? videoMap.get(post).size() : 0) == 1 ? 'single-file-post' : ''}">
+                    <div class="post-files">
+                        <div th:each="file : ${imageMap.get(post)}">
+                            <div class="file-info">
+                                <span class="file-name" th:text="${file.getName()}"></span>
+                                <span class="file-size-dimensions" th:text="${file.getSize()} + 'Кб, '"></span>
+                            </div>
+                            <img
+                                    th:src="@{
+                                         '/section/' +
+                                         ${currentSection.getArticle()} + '/'+
+                                         ${topic.getId()} + '/' +
+                                         ${post.getId()} + '/' +
+                                         ${file.getName()}
+                                         }"
+                                    alt="Post image"
+                                    onclick="openModal('imageModal', 'img01', this.src)">
+                        </div>
+                        <div th:each="file : ${videoMap.get(post)}">
+                            <div class="file-info">
+                                <span class="file-name" th:text="${file.getName()}"></span>
+                                <span class="file-size-dimensions" th:text="${file.getSize()} + 'Кб, '"></span>
+                            </div>
+                            <video
+                                    th:src="@{
+                                         '/section/' +
+                                         ${currentSection.getArticle()} + '/' +
+                                         ${topic.getId()} + '/' +
+                                         ${post.getId()} + '/' +
+                                         ${file.getName()}
+                                         }"
+                                    alt="Post video"
+                                    onclick="openModal('videoModal', 'vid01', this.src)">
+                            </video>
+                        </div>
+                    </div>
+                    <p th:text="${post.content}">Содержимое поста</p>
+                </div>
+                <button class="loadPosts" id="allPosts" th:if="${stat.index == 0 && topic.getPosts().size() > 4}">
+                    Показать все посты
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="imageModal" class="modal">
+    <img class="modal-content draggable" id="img01">
+</div>
+<div id="videoModal" class="modal">
+    <video class="modal-content draggable" id="vid01" controls autoplay></video>
+</div>
+<script src="/js/openFile.js"></script>
+<script src="/js/processForm.js"></script>
+<script src="/js/fileInfo.js"></script>
+<script src="/js/loadPosts.js"></script>
+</body>
+</html>
